@@ -4,7 +4,8 @@
   "description": "Picture Frame to load images from B2, and cache them locally for display on a Raspberry PI or similar embedded device.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
