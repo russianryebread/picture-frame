@@ -1,0 +1,25 @@
+{
+  "name": "picture-frame",
+  "version": "1.0.0",
+  "description": "Picture Frame to load images from B2, and cache them locally for display on a Raspberry PI or similar embedded device.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/russianryebread/picture-frame.git"
+  },
+  "author": "Ryan Hoshor <ryan@hoshor.me>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/russianryebread/picture-frame/issues"
+  },
+  "homepage": "https://github.com/russianryebread/picture-frame#readme",
+  "dependencies": {
+    "async": "^3.2.0",
+    "dotenv": "^8.2.0",
+    "googleapis": "^67.0.0",
+    "readline": "^1.3.0"
+  }
+}
