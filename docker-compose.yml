@@ -10,3 +10,5 @@ services:
         environment: 
             LAUNCH_URL: '"http://photo-gallery/"'
             KIOSK: '1'
+        depends_on:
+            - photo-gallery
