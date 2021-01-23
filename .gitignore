@@ -1,7 +1,7 @@
 node_modules
 .env
-credentials.json
-token.json
-pictures/*.jpg
+picture-frame/credentials.json
+picture-frame/token.json
+picture-frame/pictures/*.jpg
 .idea
 .vscode

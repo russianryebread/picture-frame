@@ -1,0 +1,12 @@
+version: '2.1'
+services:
+    photo-gallery:
+        privileged: true
+        restart: always
+        build: ./picture-frame
+    kiosk:
+        build: ./kiosk
+        privileged: true 
+        environment: 
+            LAUNCH_URL: '"http://photo-gallery/"'
+            KIOSK: '1'

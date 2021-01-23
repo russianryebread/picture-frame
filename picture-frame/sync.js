@@ -6,64 +6,69 @@ const fs = require("fs");
 const path = require("path");
 const schedule = require("node-schedule");
 
-const PICTURE_PATH = "./pictures"
+const CRON_SCHEDULE = process.env.CRON_SCHEDULE || "0 */12 * * *";
+const PICTURE_PATH = process.env.LOCAL_MEDIA_DIR || "./public/pictures"
 
-fetchImages(process.env.GALLERY_URL);
+function galleryImages() {
+    let paths = listImagesInDir(PICTURE_PATH)
+    return paths.map(path => path.replace('./public', ''))
+}
 
-var cronSchedule = process.env.CRON_SCHEDULE || "0 */12 * * *";
-console.log("Scheduling refresh of images every " + cronSchedule);
-schedule.scheduleJob(cronSchedule, () => fetchImages(process.env.GALLERY_URL))
+function scheduleSync() {
+    console.log("Scheduling refresh of images every " + CRON_SCHEDULE);
+    schedule.scheduleJob(CRON_SCHEDULE, () => fetchImages(process.env.GALLERY_URL))    
+}
 
 function fetchImages(albumURL) {
-    console.log(`Fetching images from: ${process.env.GALLERY_URL}`);
+    console.log(`Refreshing image list from: ${process.env.GALLERY_URL}`);
     var albumId = albumURL.match(new RegExp("([^#/]+$)", "g"))[0];
 
     var baseUrl = getBaseUrl(albumId);
     images = listImagesInDir(PICTURE_PATH);
 
     getPhotoMetadata(baseUrl).then((metadata) => {
-            var chunks = _chunk(metadata.photoGuids, 25);
+        var chunks = _chunk(metadata.photoGuids, 25);
 
-            var processChunks = function (i) {
-                if (i < chunks.length) {
-                    getUrls(baseUrl, chunks[i]).then((urls) => {
-                        decorateUrls(metadata, urls);
-                        setTimeout(() => processChunks(i + 1), 1000);
-                    })
-                } else {
-                    var i = 0;
-                    for (const photoGuid in metadata.photos) {
-                        i++;
-                        var photo = metadata.photos[photoGuid];
+        var processChunks = function (i) {
+            if (i < chunks.length) {
+                getUrls(baseUrl, chunks[i]).then((urls) => {
+                    decorateUrls(metadata, urls);
+                    setTimeout(() => processChunks(i + 1), 1000);
+                })
+            } else {
+                var i = 0;
+                for (const photoGuid in metadata.photos) {
+                    i++;
+                    var photo = metadata.photos[photoGuid];
 
-                        const photoName = `${photoGuid}.jpg`
-                        const photoPath = `${PICTURE_PATH}/${photoName}`
+                    const photoName = `${photoGuid}.jpg`
+                    const photoPath = `${PICTURE_PATH}/${photoName}`
 
-                        // Skip photos which are already on the fs
-                        if (fs.existsSync(photoPath)) { continue }
+                    // Skip photos which are already on the fs
+                    if (fs.existsSync(photoPath)) { continue }
 
-                        // Download files that are not.
-                        console.log(`Downloading: ${photoName}`);
-                        downloadFile(photo.url, photoPath);
-                    }
-
-                    // Delete photos which are not present in the photostream
-                    for (const image of images) {
-                        let guid = image.slice(11, 47)
-                        if (metadata.photoGuids.indexOf(guid) === -1) {
-                            console.log(`Deleting: ${image}`, guid)
-                            fs.unlinkSync(image);
-                        }
-                    }
-
-                    images = listImagesInDir(PICTURE_PATH);
+                    // Download files that are not.
+                    console.log(`Downloading: ${photoName}`);
+                    downloadFile(photo.url, photoPath);
                 }
-            };
 
-            processChunks(0);
-        }).catch(function (error) {
-            console.log("error:", error);
-        });
+                // Delete photos which are not present in the photostream
+                for (const image of images) {
+                    let guid = path.basename(image, '.jpg')
+                    if (metadata.photoGuids.indexOf(guid) === -1) {
+                        console.log(`Deleting: ${image}`, guid)
+                        fs.unlinkSync(image);
+                    }
+                }
+
+                images = listImagesInDir(PICTURE_PATH);
+            }
+        };
+
+        processChunks(0);
+    }).catch(function (error) {
+        console.log("error:", error);
+    });
 }
 
 /**
@@ -257,8 +262,7 @@ function downloadFile(url, dest, cb) {
     });
 
     file.on("error", err => {
-        // Handle errors
-        fs.unlinkSync(dest); // Delete the file async. (But we don't check the result)
+        fs.unlinkSync(dest);
         console.log(err.message);
     });
 }
@@ -274,4 +278,10 @@ function listImagesInDir(directory) {
         .map(f => `${directory}/${f}`);                                                   // rebuild file path
 
     return files;
+}
+
+module.exports = {
+    galleryImages,
+    fetchImages,
+    scheduleSync
 }
