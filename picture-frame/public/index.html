@@ -12,20 +12,37 @@
             padding: 0;
             background-color: black;
             color: white;
+        }
+
+        .img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
             background-size: contain;
             background-position: center;
             background-repeat: no-repeat;
-            transition: background 2s;
+            opacity: 1;
+            transition: visibility 1s, opacity 1s;
+        }
+
+        .img.hidden {
+            visibility: hidden;
+            opacity: 0;
         }
     </style>
 </head>
 <body id="pictureframe">
+    <div id="img1" class="img hidden"></div>
+    <div id="img2" class="img"></div>
     <script type="text/javascript">
         const RELOAD_INTERVAL = minutes2ms(10)
         const CHANGE_PHOTO_INTERVAL = minutes2ms(1)
-        var lastUrl = ''
-        var refresh = null
-        var change = null
+        const CROSSFADE_MS = 1000
+
+        let lastUrl = ''
+        let refresh = null
+        let change = null
+        let tickTock = true
 
         console.log(`Refreshing images every ${RELOAD_INTERVAL} (${ms2minutes(RELOAD_INTERVAL)}) and crossfading every ${CHANGE_PHOTO_INTERVAL} (${ms2minutes(CHANGE_PHOTO_INTERVAL)})`)
         refreshImages()
@@ -50,24 +67,47 @@
             })
         }
 
-        function changeImage(images) {
+        function getRandomImage(images) {
             if(!images) { return }
-            let image = images[Math.floor(Math.random() * images.length)]
-            setImage(images, image)
+            return images[Math.floor(Math.random() * images.length)]
         }
 
-        function setImage(images, imgUrl) {
+        function changeImage(images) {
+            imgUrl = getRandomImage(images)
             if(!imgUrl) { return }
 
             // Prevent duplicate photos from causing it to stall on a particular picture
-            if(imgUrl == lastUrl) {
-                changeImage(images)
-                return
+            while(imgUrl == lastUrl) {
+                imgUrl = getRandomImage(images)
             }
 
-            lastUrl = imgUrl
             console.log("Setting image path to:", imgUrl)
-            document.getElementById('pictureframe').style.backgroundImage = `url('${imgUrl}')`;
+
+            let img1 = document.getElementById('img1')
+            let img2 = document.getElementById('img2')
+
+            // First run, we have to prime the pump
+            if(!img1.style.backgroundImage) {
+                img1.style.backgroundImage = `url('${getRandomImage(images)}')`
+                img2.style.backgroundImage = `url('${getRandomImage(images)}')`
+            }
+
+            // Just setting the image URL on the pi causes a flicker,
+            // so we actually load another image behind the shown image,
+            // then just swap them.
+            img1.classList.toggle('hidden')
+            img2.classList.toggle('hidden')
+            
+            // Run this after the same delay as the CSS animation,
+            // so the crossfade is smooth. 
+            setTimeout(() => {
+                let el = (tickTock) ? img1 : img2
+                el.style.backgroundImage = `url('${imgUrl}')`
+            }, CROSSFADE_MS)
+
+            // reset for next run
+            lastUrl = imgUrl
+            tickTock = !tickTock
         }
 
         function minutes2ms(minutes) {
