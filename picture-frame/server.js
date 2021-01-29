@@ -35,6 +35,6 @@ app.listen(PORT, () => {
   console.log(`Picture Frame listening at http://localhost:${PORT}`)
   sync.scheduleSync()
   sync.fetchImages(GALLERY_URL)
-  slideshow.show()
+  slideshow.chromium()
 })
 
